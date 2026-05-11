@@ -11,6 +11,6 @@ COPY . .
 
 RUN go install github.com/air-verse/air@latest
 
-EXPOSE 8080
+EXPOSE 8000
 
 CMD ["air"]

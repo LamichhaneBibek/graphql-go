@@ -6,6 +6,12 @@ services:
     ports:
       - "8000:8000"
 
+    environment:
+      - PORT=8000
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/graphql_db?sslmode=disable
+      - JWT_SECRET=mysecretkey
+      
+
     volumes:
       - .:/app
 

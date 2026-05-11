@@ -7,19 +7,108 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/LamichhaneBibek/graphql-go/graph/model"
+	"github.com/LamichhaneBibek/graphql-go/internal/auth"
+	"github.com/LamichhaneBibek/graphql-go/internal/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
-// CreateTodo is the resolver for the createTodo field.
-func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
+// Register is the resolver for the register field.
+func (r *mutationResolver) Register(ctx context.Context, name string, email string, password string) (*model.AuthResponse, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword(
+		[]byte(password),
+		bcrypt.DefaultCost,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	user := models.User{
+		Name:     name,
+		Email:    email,
+		Password: string(hashedPassword),
+	}
+
+	result := r.DB.Create(&user)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	token, err := auth.GenerateToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AuthResponse{
+		Token: token,
+		User: &model.User{
+			ID:    fmt.Sprint(user.ID),
+			Name:  user.Name,
+			Email: user.Email,
+		},
+	}, nil
 }
 
-// Todos is the resolver for the todos field.
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: Todos - todos"))
+// Login is the resolver for the login field.
+func (r *mutationResolver) Login(ctx context.Context, email string, password string) (*model.AuthResponse, error) {
+	var user models.User
+
+	result := r.DB.Where("email = ?", email).First(&user)
+
+	if result.Error != nil {
+		return nil, errors.New("invalid credentials")
+	}
+
+	err := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
+		[]byte(password),
+	)
+
+	if err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+
+	token, err := auth.GenerateToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AuthResponse{
+		Token: token,
+		User: &model.User{
+			ID:    fmt.Sprint(user.ID),
+			Name:  user.Name,
+			Email: user.Email,
+		},
+	}, nil
+}
+
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	// Optional: protect this route
+	if _, ok := auth.UserIDFromCtx(ctx); !ok {
+		return nil, errors.New("unauthenticated")
+	}
+
+	var users []models.User
+	if err := r.DB.Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]*model.User, len(users))
+	for i, u := range users {
+		result[i] = &model.User{
+			ID:    fmt.Sprint(u.ID),
+			Name:  u.Name,
+			Email: u.Email,
+		}
+	}
+	return result, nil
 }
 
 // Mutation returns MutationResolver implementation.
@@ -30,3 +119,18 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
+	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
+}
+func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
+	panic(fmt.Errorf("not implemented: Todos - todos"))
+}
+*/
