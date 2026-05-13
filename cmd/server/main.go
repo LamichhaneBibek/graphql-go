@@ -9,66 +9,52 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/extension"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/99designs/gqlgen/graphql/playground"
-
 	"github.com/LamichhaneBibek/graphql-go/config"
 	"github.com/LamichhaneBibek/graphql-go/graph"
-	"github.com/LamichhaneBibek/graphql-go/internal/auth"
 	"github.com/LamichhaneBibek/graphql-go/internal/models"
+	"github.com/LamichhaneBibek/graphql-go/internal/repository"
+	"github.com/LamichhaneBibek/graphql-go/internal/seed"
+	"github.com/LamichhaneBibek/graphql-go/internal/service"
 )
 
-// cmd/server/main.go
 func main() {
-	cfg := config.Load() // load from env vars
+	cfg := config.Load()
 	db := config.ConnectDB(cfg)
-	db.AutoMigrate(&models.User{})
 
-	resolver := &graph.Resolver{DB: db} // inject DB into resolver
+	db.AutoMigrate(
+		&models.Permission{},
+		&models.Role{},
+		&models.User{},
+		&models.Post{},
+	)
+
+	seed.Roles(db)
+
+	userRepo := repository.NewUserRepository(db)
+	postRepo := repository.NewPostRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+
+	resolver := &graph.Resolver{
+		AuthService: service.NewAuthService(userRepo),
+		UserService: service.NewUserService(userRepo, roleRepo),
+		PostService: service.NewPostService(postRepo),
+	}
+
 	srv := newServer(resolver, cfg)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
+		log.Printf("server listening on :%s", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
 
 	<-quit
-	log.Println("Shutting down...")
+	log.Println("shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	srv.Shutdown(ctx)
-}
-
-func newServer(resolver *graph.Resolver, cfg *config.Config) *http.Server {
-	router := http.NewServeMux()
-
-	gqlHandler := handler.NewDefaultServer(
-		graph.NewExecutableSchema(graph.Config{Resolvers: resolver}),
-	)
-	gqlHandler.AddTransport(transport.POST{})
-	gqlHandler.Use(extension.Introspection{})
-	gqlHandler.Use(extension.FixedComplexityLimit(100))
-
-	router.Handle("/", playground.Handler("GraphQL Playground", "/query"))
-	router.Handle("/query", auth.Middleware(gqlHandler))      // ← use auth.Middleware
-	router.Handle("/health", http.HandlerFunc(healthHandler)) // ← define below
-
-	return &http.Server{
-		Addr:         ":" + cfg.Port,
-		Handler:      router,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ok"}`))
 }
