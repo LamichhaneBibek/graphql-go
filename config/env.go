@@ -12,7 +12,6 @@ type Config struct {
 }
 
 func Load() *Config {
-
 	return &Config{
 		Port:      getEnv("PORT", "8000"),
 		DSN:       mustEnv("DATABASE_URL"),
