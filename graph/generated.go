@@ -764,20 +764,6 @@ func (ec *executionContext) field_Mutation_publishPost_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_register_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
-		func(ctx context.Context, v any) (model.RegisterInput, error) {
-			return ec.unmarshalNRegisterInput2githubᚗcomᚋLamichhaneBibekᚋgraphqlᚑgoᚋgraphᚋmodelᚐRegisterInput(ctx, v)
-		})
-	if err != nil {
-		return nil, err
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_updatePost_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
