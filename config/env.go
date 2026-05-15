@@ -13,17 +13,18 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		Port:      getEnv("PORT", "8000"),
+		Port:      getEnv("PORT"),
 		DSN:       mustEnv("DATABASE_URL"),
 		JWTSecret: mustEnv("JWT_SECRET"),
 	}
 }
 
-func getEnv(key, fallback string) string {
+func getEnv(key string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
-	return fallback
+	log.Fatalf("env var %q is not set", key)
+	return ""
 }
 
 func mustEnv(key string) string {
