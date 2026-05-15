@@ -34,6 +34,6 @@ WORKDIR /app
 COPY --from=builder /app/server .
 COPY --from=builder /app/graph/ ./graph/
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD ["./server"]
