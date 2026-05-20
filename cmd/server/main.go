@@ -13,7 +13,6 @@ import (
 	"github.com/LamichhaneBibek/graphql-go/graph"
 	"github.com/LamichhaneBibek/graphql-go/internal/models"
 	"github.com/LamichhaneBibek/graphql-go/internal/repository"
-	"github.com/LamichhaneBibek/graphql-go/internal/seed"
 	"github.com/LamichhaneBibek/graphql-go/internal/service"
 )
 
@@ -22,22 +21,14 @@ func main() {
 	db := config.ConnectDB(cfg)
 
 	db.AutoMigrate(
-		&models.Permission{},
-		&models.Role{},
 		&models.User{},
-		&models.Post{},
 	)
 
-	seed.Roles(db)
-
 	userRepo := repository.NewUserRepository(db)
-	postRepo := repository.NewPostRepository(db)
-	roleRepo := repository.NewRoleRepository(db)
 
 	resolver := &graph.Resolver{
 		AuthService: service.NewAuthService(userRepo),
-		UserService: service.NewUserService(userRepo, roleRepo),
-		PostService: service.NewPostService(postRepo),
+		UserService: service.NewUserService(userRepo),
 	}
 
 	srv := newServer(resolver, cfg)

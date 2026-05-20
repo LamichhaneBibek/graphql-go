@@ -29,30 +29,6 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 	return &model.AuthResponse{Token: result.Token, User: mapUser(result.User)}, nil
 }
 
-// UpdateUserRole is the resolver for the updateUserRole field.
-func (r *mutationResolver) UpdateUserRole(ctx context.Context, userID string, roleID string) (*model.User, error) {
-	callerID, err := requireAuth(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err := r.requireRole(ctx, callerID, "admin"); err != nil {
-		return nil, err
-	}
-	uid, err := parseID(userID)
-	if err != nil {
-		return nil, err
-	}
-	rid, err := parseID(roleID)
-	if err != nil {
-		return nil, err
-	}
-	user, err := r.UserService.UpdateRole(uid, rid)
-	if err != nil {
-		return nil, err
-	}
-	return mapUser(user), nil
-}
-
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	if _, err := requireAuth(ctx); err != nil {

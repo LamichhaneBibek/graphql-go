@@ -11,34 +11,12 @@ type AuthResponse struct {
 	User  *User  `json:"user"`
 }
 
-type CreatePostInput struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-}
-
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type Mutation struct {
-}
-
-type Permission struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Resource string `json:"resource"`
-	Action   string `json:"action"`
-}
-
-type Post struct {
-	ID        string    `json:"id"`
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	Published bool      `json:"published"`
-	Author    *User     `json:"author"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type Query struct {
@@ -50,21 +28,9 @@ type RegisterInput struct {
 	Password string `json:"password"`
 }
 
-type Role struct {
-	ID          string        `json:"id"`
-	Name        string        `json:"name"`
-	Permissions []*Permission `json:"permissions"`
-}
-
-type UpdatePostInput struct {
-	Title   *string `json:"title,omitempty"`
-	Content *string `json:"content,omitempty"`
-}
-
 type User struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
-	Role      *Role     `json:"role,omitempty"`
 	CreatedAt time.Time `json:"createdAt"`
 }

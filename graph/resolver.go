@@ -9,5 +9,4 @@ import "github.com/LamichhaneBibek/graphql-go/internal/service"
 type Resolver struct {
 	AuthService service.AuthService
 	UserService service.UserService
-	PostService service.PostService
 }

@@ -1,21 +1,7 @@
-type Role {
-  id: ID!
-  name: String!
-  permissions: [Permission!]!
-}
-
-type Permission {
-  id: ID!
-  name: String!
-  resource: String!
-  action: String!
-}
-
 type User {
   id: ID!
   name: String!
   email: String!
-  role: Role
   createdAt: Time!
 }
 
@@ -44,5 +30,4 @@ type Query {
 type Mutation {
   register(input: RegisterInput!): AuthResponse!
   login(input: LoginInput!): AuthResponse!
-  updateUserRole(userId: ID!, roleId: ID!): User!
 }
